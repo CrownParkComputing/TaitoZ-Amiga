@@ -291,40 +291,13 @@ static void draw_perfhud(ULONG elapsed, int disp_frames, int game_frames, int sk
     gfx_text(GAME_OX, 12, 0xfc, line);
 }
 
-/* solid rectangle via graphics.library (RGB332 identity CLUT: pen == colour) */
-static void fill_rp(int x0, int y0, int x1, int y1, int pen)
-{
-    SetAPen(win->RPort, pen);
-    RectFill(win->RPort, x0, y0, x1, y1);
-}
-
-/* Bottom-right GEAR indicator: a graphic HI/LO shifter (the active gear cell
- * lights up yellow). Nitro/turbo stock is already shown by the game itself, so
- * it is NOT duplicated here. Redrawn on top of the game rect every frame. */
-/* Gear indicator: R1 = HIGH (top), L1 = LOW (bottom); the engaged gear lights up. */
+/* S.C.I. draws its OWN small HI/LO gear box in the arcade HUD, so we do NOT
+ * overlay one: an overlay inside the full-screen game rect flickers (the game
+ * repaints that area every frame under our RectFill) and sat on top of the
+ * turbo count. Kept as a no-op; the gear state still feeds the game via in1. */
 static void draw_status(void)
 {
-    int hi = g_gear_high;
-    const int gw = 66, ch = 16, gh = 2 * ch + 4;    /* wide enough for "R1 HIGH" */
-    int rmargin = RTG_W - (GAME_OX + GAME_W);        /* bezel margin, if any */
-    int x0, y0;
-
-    if (g_nitro_flash) g_nitro_flash--;              /* keep flash timer bounded (not shown) */
-
-    if (rmargin >= gw + 8) {                          /* margin available: sit off gameplay */
-        x0 = GAME_OX + GAME_W + (rmargin - gw) / 2;
-        y0 = GAME_VH - gh - 14;
-    } else {                                          /* SCI: no margin, bottom-right inside */
-        x0 = GAME_OX + GAME_W - gw - 6;
-        y0 = GAME_VH - gh - 6;
-    }
-
-    fill_rp(x0 - 2, y0 - 2, x0 + gw + 1, y0 + gh + 1, 0xff);          /* white frame */
-    fill_rp(x0, y0, x0 + gw, y0 + gh, 0x00);                          /* black bg    */
-    fill_rp(x0 + 2, y0 + 2, x0 + gw - 2, y0 + 2 + ch, hi ? 0xfc : 0x24);   /* R1 HIGH */
-    gfx_text(x0 + 5, y0 + ch - 2, hi ? 0x00 : 0x92, "R1 HIGH");
-    fill_rp(x0 + 2, y0 + ch + 2, x0 + gw - 2, y0 + gh - 2, hi ? 0x24 : 0xfc); /* L1 LOW */
-    gfx_text(x0 + 5, y0 + gh - 4, hi ? 0x92 : 0x00, "L1 LOW");
+    if (g_nitro_flash) g_nitro_flash--;   /* keep flash timer bounded */
 }
 
 static int perfhud_enabled(void)
