@@ -10,11 +10,16 @@ obj_rtg/
 *.bin
 data/
 
+# Distributables: built exes + Amiberry boot volumes (too large for git)
+dist/
+
 # Debug snapshots in source dirs (not assets)
 continental_circus/**/*.ppm
 continental_circus/**/*.png
 chase_hq/**/*.ppm
 chase_hq/**/*.png
+sci/**/*.ppm
+sci/**/*.png
 
 # Python cache
 __pycache__/
