@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 DIST="$(cd ../dist && pwd)"
 B=obj; mkdir -p "$B"
 GCC="m68k-amigaos-gcc -m68030 -noixemul -O3 -fomit-frame-pointer -funroll-loops -DNDEBUG -I . -I cores -I cores/softfloat"
-GCCYM="m68k-amigaos-gcc -m68030 -noixemul -O3 -fomit-frame-pointer -funroll-loops -fno-strict-aliasing -DNDEBUG -DHAS_YM2610=1 -I . -I cores -I cores/ym"
+GCCYM="m68k-amigaos-gcc -m68030 -noixemul -O3 -fomit-frame-pointer -funroll-loops -fno-strict-aliasing -DNDEBUG -DHAS_YM2610=1 -DSCI_Z80_DIV_DEFAULT=2 -I . -I cores -I cores/ym"
 
 $GCC -c cores/m68kcpu.c             -o "$B/m68kcpu.o"
 $GCC -c cores/m68kops.c             -o "$B/m68kops.o"

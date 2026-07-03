@@ -141,8 +141,16 @@ static volatile int z_int;
 int cc_dbg_tover=0;
 int cc_dbg_ymraw=0, cc_dbg_ssgraw=0, cc_dbg_yminit=-99, cc_dbg_keyon=0, cc_dbg_adpcma=0, cc_dbg_deltat=0;
 double cc_dbg_tper(void){ return (double)tmr_per_cyc[0]; }
+/* Z80 sound-CPU underclock (matches Chase H.Q.): run 1/cc_z80_div of the real Z80
+ * cycles and divide the YM2610 timer period by the same factor, so the sound
+ * timing is unchanged but the interpreted-Z80 cost drops ~in half. The Z80 driver
+ * is mostly a poll loop, so this is inaudible and cuts frame-skip. -DSCI_Z80_DIV_DEFAULT=2. */
+#ifndef SCI_Z80_DIV_DEFAULT
+#define SCI_Z80_DIV_DEFAULT 1
+#endif
+int cc_z80_div = SCI_Z80_DIV_DEFAULT;
 static void fm_timer(int n,int c,int count,double step){ (void)n;(void)step; if(c<0||c>1)return;
-    if(count<=0){ tmr_per_cyc[c]=0; } else { tmr_per_cyc[c]=count*(c==0?72:1152); tmr_acc_cyc[c]=0; cc_dbg_tmr++; } }
+    if(count<=0){ tmr_per_cyc[c]=0; } else { int p=(count*(c==0?72:1152))/cc_z80_div; if(p<1)p=1; tmr_per_cyc[c]=p; tmr_acc_cyc[c]=0; cc_dbg_tmr++; } }
 static void fm_irq(int n,int irq){ (void)n; z_int = irq; }
 
 /* ================= Z80 bank + memory glue ================================== */
@@ -198,6 +206,7 @@ void cc_audio_init(void){
  * rate (Paula refill) so the music tempo is independent of the video framerate. */
 void cc_audio_run_cycles(int total){
     if(!z_ok || z_reset_held) return;
+    total /= cc_z80_div;   /* underclock: fewer real Z80 cycles, same wall time (matches Chase H.Q.) */
     const int per=512;   /* pdrift-size slices: finer timer/NMI interleave */
     while(total>0){
         int run = total<per?total:per;
