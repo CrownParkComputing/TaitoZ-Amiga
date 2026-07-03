@@ -60,7 +60,10 @@ static uint8_t cov_sub[0x20000 / 2];
 static unsigned load_be16(const uint8_t *p){ return ((unsigned)p[0] << 8) | p[1]; }
 static unsigned load_be32(const uint8_t *p){ return ((unsigned)p[0] << 24) | ((unsigned)p[1] << 16) | ((unsigned)p[2] << 8) | p[3]; }
 static void store_be16(uint8_t *p, unsigned v){ p[0] = (uint8_t)(v >> 8); p[1] = (uint8_t)v; }
-static unsigned steer_word(void){ return (0xff80u + (0x80u + (unsigned)(io_steer & 0xff))) & 0xffffu; }
+/* Centered signed steering ADC. io_steer is signed (- = left, + = right); the
+ * old `io_steer & 0xff` mask turned left into a positive value so the wheel only
+ * ever went right. Keep it signed, matching the ioc_read path and Chase H.Q. */
+static unsigned steer_word(void){ return (unsigned)((0xff80 + (0x80 + io_steer)) & 0xffff); }
 
 void cc_set_inputs(uint8_t in0, uint8_t in1, uint8_t dswa, uint8_t dswb, int steer){
     io_in0=in0; io_in1=in1; io_dswa=dswa; io_dswb=dswb; io_steer=steer;
