@@ -3,54 +3,54 @@
 	.section .rodata
 	.balign 4
 	.global _cc_rom_main
-_cc_rom_main:  .incbin "../source/data/maincpu.bin"
+_cc_rom_main:  .incbin "data/maincpu.bin"
 	.balign 4
 	.global _cc_rom_sub
-_cc_rom_sub:   .incbin "../source/data/sub.bin"
+_cc_rom_sub:   .incbin "data/sub.bin"
 	.balign 4
 	.global _cc_gfx_scn
-_cc_gfx_scn:   .incbin "../source/data/gfx_scn.bin"
+_cc_gfx_scn:   .incbin "data/gfx_scn.bin"
 	.balign 4
 	.global _cc_gfx_road
-_cc_gfx_road:  .incbin "../source/data/gfx_road.bin"
+_cc_gfx_road:  .incbin "data/gfx_road.bin"
 	.balign 4
 	.global _cc_gfx_spr
-_cc_gfx_spr:   .incbin "../source/data/sprites_asm.bin"
+_cc_gfx_spr:   .incbin "data/sprites_asm.bin"
 	.balign 4
 	.global _cc_gfx_spr2
-_cc_gfx_spr2:  .incbin "../source/data/sprites2_asm.bin"
+_cc_gfx_spr2:  .incbin "data/sprites2_asm.bin"
 	.balign 4
 	.global _cc_gfx_smap
-_cc_gfx_smap:  .incbin "../source/data/spritemap_asm.bin"
+_cc_gfx_smap:  .incbin "data/spritemap_asm.bin"
 	.balign 4
 	.global _cc_rom_motor
-_cc_rom_motor: .incbin "../source/data/motorcpu.bin"
+_cc_rom_motor: .incbin "data/motorcpu.bin"
 	.balign 4
 	.global _cc_proms
-_cc_proms: .incbin "../source/data/proms.bin"
+_cc_proms: .incbin "data/proms.bin"
 	.balign 4
 	.balign 4
 	.global _cc_pal256
-_cc_pal256:   .incbin "../source/data/cc_pal256.bin"
+_cc_pal256:   .incbin "data/cc_pal256.bin"
 	.balign 4
 	.global _cc_lut32k
-_cc_lut32k:   .incbin "../source/data/cc_lut32k.bin"
+_cc_lut32k:   .incbin "data/cc_lut32k.bin"
 	.balign 4
 	.balign 4
 	.global _cc_rom_audio
-_cc_rom_audio: .incbin "../source/data/audiocpu.bin"
+_cc_rom_audio: .incbin "data/audiocpu.bin"
 	.balign 4
 	.balign 4
 	.global _cc_adpcma
-_cc_adpcma: .incbin "../source/data/adpcma.bin"
+_cc_adpcma: .incbin "data/adpcma.bin"
 	.balign 4
 	.global _cc_adpcmb
-_cc_adpcmb: .incbin "../source/data/adpcmb.bin"
+_cc_adpcmb: .incbin "data/adpcmb.bin"
 	.balign 4
 	.balign 4
 	.global _cc_bezel_data
-_cc_bezel_data: .incbin "../source/data/cc_bezel.bin"
+_cc_bezel_data: .incbin "data/cc_bezel.bin"
 	.balign 4
 	.global _cc_bezelpal
-_cc_bezelpal: .incbin "../source/data/cc_bezelpal.bin"
+_cc_bezelpal: .incbin "data/cc_bezelpal.bin"
 	.balign 4
