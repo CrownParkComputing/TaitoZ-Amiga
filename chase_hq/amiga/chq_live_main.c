@@ -32,6 +32,7 @@
 #include <string.h>
 
 #include "chq_state.h"
+#include "arcade_intro.h"
 
 /* WriteChunkyPixels is graphics.library V40+ (proto/graphics.h) */
 
@@ -67,9 +68,14 @@ static void log_msg(const char *s)
 #define RTG_H 486
 #define SCALE 2
 #define GAME_W (CC_W * SCALE)          /* 640 */
-#define GAME_H (CC_H * SCALE)          /* 448 */
+#define GAME_H RTG_H                   /* 486 -- fill full height (arcade 4:3, no letterbox) */
 #define GAME_OX ((RTG_W - GAME_W) / 2) /* 112 */
-#define GAME_OY ((RTG_H - GAME_H) / 2) /* 19  */
+#define GAME_OY 0                      /* game fills top-to-bottom; car sits at the bottom */
+/* Amiberry's RTG display clips the last couple of screen rows, which cut the
+ * arcade's very bottom line (the turbo/dashboard). Shrink the game a few px and
+ * keep that strip as bezel so the whole arcade frame stays visible. Tunable. */
+#define GAME_BOTTOM_SAFE 20
+#define GAME_VH (GAME_H - GAME_BOTTOM_SAFE)   /* visible game height */
 
 #define CHQ_DRIVE_LOCK_MAX_FRAMES 90
 #define CHQ_DRIVE_READY_STREAK 6
@@ -89,6 +95,7 @@ static void log_msg(const char *s)
 #define RK_LCTRL 0x63
 #define RK_LALT 0x64
 #define RK_F1 0x50
+#define RK_F10 0x59
 #define JOY1DAT  (*(volatile unsigned short *)0xdff00cUL)
 #define CIAA_PRA (*(volatile unsigned char  *)0xbfe001UL)
 #define CIAA_DDRA (*(volatile unsigned char *)0xbfe201UL)
@@ -236,25 +243,69 @@ static void rebuild_pen8(void)
     }
 }
 
-/* 320x224 pens -> centred 2x chunky; word-doubled stores + row memcpy (pdrift) */
+/* 320x224 pens -> game window: horizontal 2x, vertical scaled to fill GAME_H so
+ * there is no top/bottom letterbox (arcade 4:3 look); the car ends at the bottom. */
 static void present_frame(void)
 {
     rebuild_pen8();
-    for (int y = 0; y < CC_H; y++) {
-        const uint16_t *src = game + y * CC_W;
-        uint8_t *row0 = chunky + (size_t)(GAME_OY + y * SCALE) * RTG_W + GAME_OX;
+    for (int dy = 0; dy < GAME_VH; dy++) {
+        int sy = (dy * CC_H) / GAME_VH;                /* map dest row -> 0..CC_H-1 */
+        const uint16_t *src = game + sy * CC_W;
+        uint8_t *row0 = chunky + (size_t)(GAME_OY + dy) * RTG_W + GAME_OX;
         uint32_t *d32 = (uint32_t *)row0;
         for (int x = 0; x < CC_W; x += 2) {
             unsigned p0 = pen8[src[x] & 0xfff];
             unsigned p1 = pen8[src[x + 1] & 0xfff];
             d32[x >> 1] = (p0 << 24) | (p0 << 16) | (p1 << 8) | p1;
         }
-        memcpy(row0 + RTG_W, row0, GAME_W);
     }
     WriteChunkyPixels(win->RPort, GAME_OX, GAME_OY,
                       GAME_OX + GAME_W - 1, GAME_OY + GAME_H - 1,
                       chunky + (size_t)GAME_OY * RTG_W + GAME_OX, RTG_W);
 }
+
+/* ---- in-game RTG bezel (The Bezel Project chasehq.png, baked in romdata) ----
+ * 864x486 8-bit RGB332, byte 0 = the game hole. Laid into the framebuffer once;
+ * present_frame() then refreshes only the 640x448 game rect on top of it. */
+extern const unsigned char chq_rtg_bezel[], chq_rtg_bezel_end[];
+static void blit_bezel(void)
+{
+    size_t n = (size_t)(chq_rtg_bezel_end - chq_rtg_bezel);
+    if (n >= (size_t)RTG_W * RTG_H)
+        memcpy(chunky, chq_rtg_bezel, (size_t)RTG_W * RTG_H);
+    WriteChunkyPixels(win->RPort, 0, 0, RTG_W - 1, RTG_H - 1, chunky, RTG_W);
+}
+
+/* ---- F10 DIP-switch editor (MAME chasehq DSWA + DSWB) ---- */
+static uint8_t g_dswa = 0xff, g_dswb = 0xff;
+static const ai_dip_opt chq_dip_cab[]   = {
+    {0x03,"UPRIGHT LOCK"}, {0x02,"UPRIGHT FREE"}, {0x01,"COCKPIT"}, {0x00,"DELUXE"}
+};
+static const ai_dip_opt chq_dip_demo[]  = { {0x00,"OFF"}, {0x08,"ON"} };
+static const ai_dip_opt chq_dip_coina[] = { {0x30,"1C 1C"}, {0x20,"2C 1C"}, {0x10,"3C 1C"}, {0x00,"4C 1C"} };
+static const ai_dip_opt chq_dip_coinb[] = { {0xc0,"1C 2C"}, {0x80,"1C 3C"}, {0x40,"1C 4C"}, {0x00,"1C 6C"} };
+static const ai_dip_opt chq_dip_diff[]  = { {0x03,"MEDIUM"}, {0x02,"EASY"}, {0x01,"HARD"}, {0x00,"HARDEST"} };
+static const ai_dip_opt chq_dip_timer[] = { {0x0c,"60 SEC"}, {0x08,"70 SEC"}, {0x04,"65 SEC"}, {0x00,"55 SEC"} };
+static const ai_dip_opt chq_dip_turbo[] = { {0x10,"3"}, {0x00,"5"} };
+static const ai_dip_opt chq_dip_cprice[]= { {0x20,"SAME"}, {0x00,"DISCOUNT"} };
+static const ai_dip_opt chq_dip_cleardmg[] = { {0x00,"OFF"}, {0x40,"ON"} };
+static const ai_dip_opt chq_dip_allow[] = { {0x00,"OFF"}, {0x80,"ON"} };
+static const ai_dip_item chq_dip_items[] = {
+    {"DIFFICULTY",     1, 0x03, 4, chq_dip_diff},
+    {"TIMER",          1, 0x0c, 4, chq_dip_timer},
+    {"TURBOS STOCKED", 1, 0x10, 2, chq_dip_turbo},
+    {"CONTINUE PRICE", 1, 0x20, 2, chq_dip_cprice},
+    {"CLEAR DAMAGE",   1, 0x40, 2, chq_dip_cleardmg},
+    {"ALLOW CONTINUE", 1, 0x80, 2, chq_dip_allow},
+    {"CABINET",        0, 0x03, 4, chq_dip_cab},
+    {"DEMO SOUNDS",    0, 0x08, 2, chq_dip_demo},
+    {"COIN A",         0, 0x30, 4, chq_dip_coina},
+    {"COIN B",         0, 0xc0, 4, chq_dip_coinb}
+};
+static const ai_dip_config chq_dip_cfg = {
+    chq_dip_items, (int)(sizeof chq_dip_items / sizeof chq_dip_items[0]),
+    &g_dswa, &g_dswb, 0, 0             /* DIPs are read live; no re-init needed */
+};
 
 static void gfx_text(int x, int y, int pen, const char *s)
 {
@@ -283,25 +334,46 @@ static void draw_perfhud(ULONG elapsed, int disp_frames, int game_frames, int sk
                 (unsigned long)(tm / e100), (unsigned long)(ta / e100),
                 (unsigned long)(tr / e100), (unsigned long)(tp / e100));
     }
-    gfx_text(GAME_OX, 12, 0xfc, line);
+    gfx_text(GAME_OX, RTG_H - 6, 0xfc, line);   /* perf HUD moved to the bottom strip */
 }
 
+/* solid rectangle via graphics.library (RGB332 identity CLUT: pen == colour) */
+static void fill_rp(int x0, int y0, int x1, int y1, int pen)
+{
+    SetAPen(win->RPort, pen);
+    RectFill(win->RPort, x0, y0, x1, y1);
+}
+
+/* Bottom-right GEAR indicator: a graphic HI/LO shifter (the active gear cell
+ * lights up yellow). Nitro/turbo stock is already shown by the game itself, so
+ * it is NOT duplicated here. present_frame() paints the game under this every
+ * frame, so it is redrawn on top each frame. */
+/* Gear indicator: R1 = HIGH (top), L1 = LOW (bottom); the engaged gear lights up. */
 static void draw_status(void)
 {
-    /* OS Text() rendering is not cheap on RTG -- redraw only when the values
-     * change (Power Drift keeps its overlay off per-frame for the same reason). */
-    static int last_gear = -1, last_stock = -1, last_hot = -1;
-    int hot = (g_turbo_active || g_nitro_flash) ? 1 : 0;
-    if (g_nitro_flash) g_nitro_flash--;
-    if (g_gear_high == last_gear && g_nitro_stock == last_stock && hot == last_hot)
-        return;
-    last_gear = g_gear_high; last_stock = g_nitro_stock; last_hot = hot;
-    {
-        char line[64];
-        sprintf(line, "GEAR %s  NITRO %ld %s  ", g_gear_high ? "HI" : "LO",
-                (long)g_nitro_stock, hot ? "*" : " ");
-        gfx_text(GAME_OX, RTG_H - 6, hot ? 0xe4 : 0xff, line);
+    int hi = g_gear_high;
+    const int gw = 66, ch = 16, gh = 2 * ch + 4;    /* wide enough for "R1 HIGH" */
+    int rmargin = RTG_W - (GAME_OX + GAME_W);        /* bezel margin to the right of the game */
+    int x0, y0;
+
+    if (g_nitro_flash) g_nitro_flash--;              /* keep flash timer bounded (not shown) */
+
+    if (rmargin >= gw + 8) {                          /* Chase HQ: sit in the bezel margin, off gameplay */
+        x0 = GAME_OX + GAME_W + (rmargin - gw) / 2;
+        y0 = GAME_VH - gh - 14;
+    } else {                                          /* no margin (SCI): bottom-right, inside */
+        x0 = GAME_OX + GAME_W - gw - 6;
+        y0 = GAME_VH - gh - 6;
     }
+
+    fill_rp(x0 - 2, y0 - 2, x0 + gw + 1, y0 + gh + 1, 0xff);          /* white frame */
+    fill_rp(x0, y0, x0 + gw, y0 + gh, 0x00);                          /* black bg    */
+    /* R1 -> HIGH (top) */
+    fill_rp(x0 + 2, y0 + 2, x0 + gw - 2, y0 + 2 + ch, hi ? 0xfc : 0x24);
+    gfx_text(x0 + 5, y0 + ch - 2, hi ? 0x00 : 0x92, "R1 HIGH");
+    /* L1 -> LOW (bottom) */
+    fill_rp(x0 + 2, y0 + ch + 2, x0 + gw - 2, y0 + gh - 2, hi ? 0x24 : 0xfc);
+    gfx_text(x0 + 5, y0 + gh - 4, hi ? 0x92 : 0x00, "L1 LOW");
 }
 
 static int perfhud_enabled(void)
@@ -309,7 +381,7 @@ static int perfhud_enabled(void)
     char v[8];
     LONG n = GetVar((CONST_STRPTR)"CHQPERF", (STRPTR)v, sizeof(v), 0);
     if (n > 0) return v[0] != '0';
-    return 1;
+    return 0;   /* default OFF now the game fills the screen (it would overlay/flicker); opt in via CHQPERF=1 */
 }
 
 static int whitty_no_game_loader(void)
@@ -375,6 +447,18 @@ static void poll_input(void)
     int steer = 0;
     poll_keys();
     if (keydown[RK_ESC]) g_quit = 1;
+    {
+        static int kf10;
+        if (keydown[RK_F10] && !kf10) {         /* F10 = modal DIP-switch editor */
+            cc_audio_amiga_pause(1);
+            ai_dip_open(&chq_dip_cfg);
+            LoadRGB32(&scr->ViewPort, loadrgb); /* restore our RGB332 palette */
+            blit_bezel();
+            cc_audio_amiga_pause(0);
+            keydown[RK_F10] = 0;
+        }
+        kf10 = keydown[RK_F10];
+    }
     if (keydown[RK_P] && !p_prev) { g_pause = !g_pause; cc_audio_amiga_pause(g_pause); }
     p_prev = keydown[RK_P];
 
@@ -389,14 +473,18 @@ static void poll_input(void)
 
     int gas = !(CIAA_PRA & PORT1_FIRE) || keydown[RK_UP] || keydown[RK_SPACE] || keydown[RK_LCTRL] ||
               (cd32 & CD32_RED);
-    int brake = keydown[RK_DOWN] || (cd32 & CD32_RSHOULDER);
+    int brake = keydown[RK_DOWN];                      /* R1 freed for high gear */
     int turbo = keydown[RK_LALT] || (cd32 & (CD32_BLUE | CD32_GREEN));
-    int gear = keydown[RK_X] || (cd32 & CD32_YELLOW);
-    if (!drive_enabled) brake = turbo = gear = 0;
-    if (gear && !gear_prev) gear_high ^= 1;
-    gear_prev = gear;
+    int gear_tog = keydown[RK_X] || (cd32 & CD32_YELLOW);   /* keyboard/yellow toggle fallback */
+    if (!drive_enabled) brake = turbo = 0;
+    if (drive_enabled) {                               /* R1 = HIGH gear, L1 = LOW gear (direct) */
+        if (cd32 & CD32_RSHOULDER) gear_high = 1;
+        if (cd32 & CD32_LSHOULDER) gear_high = 0;
+        if (gear_tog && !gear_prev) gear_high ^= 1;
+    }
+    gear_prev = gear_tog;
     uint8_t in0 = 0x33, in1 = 0x3f;
-    int coin = keydown[RK_5] || (cd32 & CD32_LSHOULDER);
+    int coin = keydown[RK_5] || ((cd32 & CD32_LSHOULDER) && !drive_enabled);  /* L1 coins pre-race only */
     int start = keydown[RK_1] || keydown[RK_RETURN] || (cd32 & CD32_PLAY);
     if (coin && !c1p) {
         c1h = 8;
@@ -444,7 +532,7 @@ static void poll_input(void)
     if (turbo) in1 &= (uint8_t)~0x01;
     if (brake) in0 &= (uint8_t)~0x20;
     g_gear_high = gear_high;
-    cc_set_inputs(in0, in1, 0xff, 0xff, steer);
+    cc_set_inputs(in0, in1, g_dswa, g_dswb, steer);
 }
 
 static void shutdown(void)
@@ -539,6 +627,8 @@ int main(void)
     ScreenToFront(scr);
     ActivateWindow(win);
 
+    ai_init(scr, win, chunky, RTG_W, RTG_H);   /* bind surface for the F10 DIP editor */
+
     if (!whitty_no_game_loader())
         run_loader();
     if (g_quit) { shutdown(); return 0; }
@@ -547,6 +637,7 @@ int main(void)
     cc_audio_init();
     cc_audio_amiga_open();
     ok = 1;
+    blit_bezel();   /* lay the cabinet bezel; present_frame refreshes the game rect */
 
     {
         int hud = perfhud_enabled() && TimerBase != 0;

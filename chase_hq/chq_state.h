@@ -81,6 +81,6 @@ void cc_render_frame(uint16_t *out, int stride);
  * Amiga: AllocMem FAST->ANY (cc_rtg_main.c); host: calloc (cc_hosttest.c). */
 void *cc_big_alloc(unsigned long n);
 #define CC_W 320
-#define CC_H 224
+#define CC_H 240   /* MAME chasehq visible area = 320x240 (set_raw vdisp 16..256); 224 cropped the bottom (dashboard/car) */
 
 #endif
