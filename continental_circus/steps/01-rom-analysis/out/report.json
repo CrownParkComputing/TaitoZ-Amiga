@@ -1,0 +1,213 @@
+{
+  "verify": [
+    {
+      "file": "b33-ww.ic25",
+      "size": 131072,
+      "want_size": 131072,
+      "crc": "f5c92e42",
+      "want_crc": "f5c92e42",
+      "ok": true
+    },
+    {
+      "file": "b33-xx.ic26",
+      "size": 131072,
+      "want_size": 131072,
+      "crc": "e7c1d1fa",
+      "want_crc": "e7c1d1fa",
+      "ok": true
+    },
+    {
+      "file": "b33-yy.ic35",
+      "size": 131072,
+      "want_size": 131072,
+      "crc": "16522f2d",
+      "want_crc": "16522f2d",
+      "ok": true
+    },
+    {
+      "file": "cc_36.bin",
+      "size": 131072,
+      "want_size": 131072,
+      "crc": "a1732ea5",
+      "want_crc": "a1732ea5",
+      "ok": true
+    },
+    {
+      "file": "b33-30.11",
+      "size": 65536,
+      "want_size": 65536,
+      "crc": "d8746234",
+      "want_crc": "d8746234",
+      "ok": true
+    },
+    {
+      "file": "b33-02.57",
+      "size": 524288,
+      "want_size": 524288,
+      "crc": "f6fb3ba2",
+      "want_crc": "f6fb3ba2",
+      "ok": true
+    },
+    {
+      "file": "b33-06",
+      "size": 524288,
+      "want_size": 524288,
+      "crc": "2cb40599",
+      "want_crc": "2cb40599",
+      "ok": true
+    },
+    {
+      "file": "b33-05",
+      "size": 524288,
+      "want_size": 524288,
+      "crc": "bddf9eea",
+      "want_crc": "bddf9eea",
+      "ok": true
+    },
+    {
+      "file": "b33-04",
+      "size": 524288,
+      "want_size": 524288,
+      "crc": "8df866a2",
+      "want_crc": "8df866a2",
+      "ok": true
+    },
+    {
+      "file": "b33-03",
+      "size": 524288,
+      "want_size": 524288,
+      "crc": "4f6c36d9",
+      "want_crc": "4f6c36d9",
+      "ok": true
+    },
+    {
+      "file": "b33-01.3",
+      "size": 524288,
+      "want_size": 524288,
+      "crc": "f11f2be8",
+      "want_crc": "f11f2be8",
+      "ok": true
+    },
+    {
+      "file": "b33-07.64",
+      "size": 524288,
+      "want_size": 524288,
+      "crc": "151e1f52",
+      "want_crc": "151e1f52",
+      "ok": true
+    },
+    {
+      "file": "b33-09.18",
+      "size": 524288,
+      "want_size": 524288,
+      "crc": "1e6724b5",
+      "want_crc": "1e6724b5",
+      "ok": true
+    },
+    {
+      "file": "b33-10.17",
+      "size": 524288,
+      "want_size": 524288,
+      "crc": "e9ce03ab",
+      "want_crc": "e9ce03ab",
+      "ok": true
+    },
+    {
+      "file": "b33-08.19",
+      "size": 524288,
+      "want_size": 524288,
+      "crc": "caa1c4c8",
+      "want_crc": "caa1c4c8",
+      "ok": true
+    },
+    {
+      "file": "b14-30.97",
+      "size": 65536,
+      "want_size": 65536,
+      "crc": "dccb0c7f",
+      "want_crc": "dccb0c7f",
+      "ok": true
+    },
+    {
+      "file": "b14-31.50",
+      "size": 8192,
+      "want_size": 8192,
+      "crc": "5c6b013d",
+      "want_crc": "5c6b013d",
+      "ok": true
+    },
+    {
+      "file": "b33-17.16",
+      "size": 256,
+      "want_size": 256,
+      "crc": "7b7d8ff4",
+      "want_crc": "7b7d8ff4",
+      "ok": true
+    },
+    {
+      "file": "b33-18.17",
+      "size": 256,
+      "want_size": 256,
+      "crc": "fbf81f30",
+      "want_crc": "fbf81f30",
+      "ok": true
+    }
+  ],
+  "outputs": [
+    {
+      "file": "maincpu.bin",
+      "size": 262144,
+      "crc": "26ec7190"
+    },
+    {
+      "file": "sub.bin",
+      "size": 262144,
+      "crc": "1a250cff"
+    },
+    {
+      "file": "audiocpu.bin",
+      "size": 65536,
+      "crc": "d8746234"
+    },
+    {
+      "file": "gfx_scn.bin",
+      "size": 524288,
+      "crc": "f6fb3ba2"
+    },
+    {
+      "file": "gfx_road.bin",
+      "size": 524288,
+      "crc": "f11f2be8"
+    },
+    {
+      "file": "spritemap.bin",
+      "size": 524288,
+      "crc": "151e1f52"
+    },
+    {
+      "file": "sprites.bin",
+      "size": 2097152,
+      "crc": "8efc3b45"
+    },
+    {
+      "file": "adpcma.bin",
+      "size": 1048576,
+      "crc": "902ced14"
+    },
+    {
+      "file": "adpcmb.bin",
+      "size": 524288,
+      "crc": "caa1c4c8"
+    },
+    {
+      "file": "proms.bin",
+      "size": 512,
+      "crc": "da9079c2"
+    },
+    {
+      "file": "user2.bin",
+      "size": 73728,
+      "crc": "83431092"
+    }
+  ]
+}
