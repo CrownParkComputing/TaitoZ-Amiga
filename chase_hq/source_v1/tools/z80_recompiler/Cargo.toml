@@ -1,0 +1,10 @@
+[package]
+name = "chq_z80_recompiler"
+version = "0.1.0"
+edition = "2021"
+description = "Z80 -> Rust static recompiler for Chase HQ's sound driver (host tool, x86). Decodes the fixed 0x0000-0x3fff region of audiocpu.bin (the 0x4000-0x7fff banked window is DATA only) and emits a no_std Rust crate whose chq_aud_run() reproduces the driver on a Z80State; compiled to native m68k via cargo +nightly -Z build-std=core --target m68k-unknown-none-elf and host-validated vs cores/z80.c."
+
+# No [[bin]] section: cargo auto-discovers src/bin/recompile_chasehq_audio.rs.
+
+[profile.release]
+opt-level = 3

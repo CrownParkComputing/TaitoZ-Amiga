@@ -1,0 +1,35 @@
+# Build artifacts
+obj/
+obj_rtg/
+*.o
+*.a
+*.exe
+*.lnk
+
+# ROM / binary blobs
+*.bin
+data/
+
+# Debug snapshots in source dirs (not assets)
+continental_circus/**/*.ppm
+continental_circus/**/*.png
+chase_hq/**/*.ppm
+chase_hq/**/*.png
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Cargo build output
+target/
+
+# hdf_stage (full Amiga OS install — too large)
+obj_rtg/hdf_stage/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store

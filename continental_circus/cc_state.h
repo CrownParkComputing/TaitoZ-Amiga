@@ -1,0 +1,55 @@
+/* cc_state.h -- shared video state between cc_machine.c (writes) and cc_render.c (reads). */
+#ifndef CC_STATE_H
+#define CC_STATE_H
+#include <stdint.h>
+
+/* video RAM the emulated Taito chips read (owned by cc_machine.c) */
+extern uint8_t  cc_scn[0x14000];     /* TC0100SCN ram */
+extern uint8_t  cc_scnctl[0x10];     /* TC0100SCN ctrl */
+extern uint8_t  cc_road[0x2000];     /* TC0150ROD ram */
+extern uint8_t  cc_spr[0x700];       /* spriteram */
+extern uint16_t cc_pal[0x1000];      /* TC0110PCR palette (raw xRGB555) */
+extern int      cc_road_palbank;     /* contcirc_out_w bits 6-7 */
+
+/* gfx ROMs (cc_romdata.s) */
+extern uint8_t cc_gfx_scn[];   /* 0x80000  TC0100SCN tiles */
+extern uint8_t cc_gfx_road[];  /* 0x80000  TC0150ROD road gfx */
+extern uint8_t cc_gfx_spr[];   /* 0x200000 assembled sprite gfx */
+extern uint8_t cc_gfx_smap[];  /* 0x80000  spritemap (LE words) */
+
+/* fixed display palette (cc_romdata.s): 256*3 RGB bytes + 32768-entry nearest LUT
+ * (xRGB555 -> slot). Stable across frames -> no flicker; covers darks (tunnels). */
+extern uint8_t cc_pal256[];   /* 256 * 3 (R,G,B) */
+extern uint8_t cc_lut32k[];   /* 32768 bytes, xRGB555 -> palette slot 0..255 */
+
+/* machine API (cc_machine.c) */
+void cc_machine_init(void);
+void cc_machine_run_frame(void);
+void cc_set_inputs(uint8_t in0, uint8_t in1, uint8_t dswa, uint8_t dswb, int steer);
+
+/* sound API (cc_audio.c) -- Z80 audiocpu + TC0140SYT mailbox + YM2610 */
+extern uint8_t cc_rom_audio[];        /* 0x10000 audiocpu (cc_romdata.s) */
+extern uint8_t cc_adpcma[];           /* 0x100000 YM2610 ADPCM-A samples */
+extern uint8_t cc_adpcmb[];           /* 0x080000 YM2610 ADPCM-B samples */
+void    cc_audio_init(void);
+void    cc_audio_run_frame(void);
+void    cc_audio_run_cycles(int total);
+void    cc_audio_render(signed char *out, int n);   /* mono signed-8 PCM @ 22.05kHz */
+void    cc_audio_amiga_open(void);                   /* Paula setup (cc_audio_amiga.c) */
+void    cc_audio_amiga_frame(void);                  /* per-frame Paula feed */
+void    cc_audio_amiga_close(void);                  /* stop Paula on exit */
+void    cc_audio_reset_line(int clear_line);          /* TC0140SYT/Z80 reset: 1=run, 0=hold */
+extern uint8_t cc_bezel_data[];   /* 320x256 AGA bezel chunky (cc_romdata.s) */
+extern uint8_t cc_bezelpal[];     /* 16 x RGB bezel palette (slots 240-255) */
+void    cc_syt_master_port_w(uint8_t d);   /* sub 0x200001 write */
+void    cc_syt_master_comm_w(uint8_t d);   /* sub 0x200003 write */
+uint8_t cc_syt_master_comm_r(void);        /* sub 0x200003 read  */
+
+/* renderer API (cc_render.c) -- fills a 320x224 buffer of 12-bit palette PENS
+ * (index into cc_pal). The presenter maps pens -> screen colors (adaptive CLUT
+ * on 8-bit, or direct truecolor). */
+void cc_render_frame(uint16_t *out, int stride);
+#define CC_W 320
+#define CC_H 224
+
+#endif

@@ -1,0 +1,7 @@
+# cargo build artifacts
+/target
+# The repo-wide **/bin/ rule (built game executables) must not eat cargo's
+# src/bin/ SOURCES -- the Shinobi-lineage generator was silently untracked
+# because of it. Re-include them.
+!/src/bin/
+!/src/bin/**
